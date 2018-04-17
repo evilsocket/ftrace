@@ -48,7 +48,7 @@ func parseUntilNext(data string, tok rune) (string, int) {
 }
 
 func parseEvent(data string) (error, Event) {
-	m := eventParser.FindStringSubmatch(Trim(data))
+	m := eventParser.FindStringSubmatch(trim(data))
 	if m != nil && len(m) == 3 {
 		event := Event{
 			Name:      m[1],

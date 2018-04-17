@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func Reader(filename string) (chan string, error) {
+func asyncFileReader(filename string) (chan string, error) {
 	fp, err := os.Open(filename)
 	if err != nil {
 		return nil, err

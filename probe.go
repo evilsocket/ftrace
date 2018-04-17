@@ -7,7 +7,16 @@ import (
 	"sync"
 )
 
-var ErrUnavailable = errors.New("FTRACE kernel framework not available on your system")
+const (
+	maxArguments      = 16
+	enabledStatusFile = "/proc/sys/kernel/ftrace_enabled"
+	systemProbesFile  = "/sys/kernel/debug/tracing/kprobe_events"
+	eventsPipeFile    = "/sys/kernel/debug/tracing/trace_pipe"
+	probeFileFormat   = "/sys/kernel/debug/tracing/events/kprobes/%s/enable"
+	eventFileFormat   = "/sys/kernel/debug/tracing/events/%s/enable"
+)
+
+var errUnavailable = errors.New("FTRACE kernel framework not available on your system")
 
 type Probe struct {
 	sync.RWMutex
@@ -34,7 +43,7 @@ type Probe struct {
 func NewProbe(name string, syscall string, subEvents []string) *Probe {
 	return &Probe{
 		name:       name,
-		fileName:   fmt.Sprintf(ProbeFileFmt, name),
+		fileName:   fmt.Sprintf(probeFileFormat, name),
 		syscall:    syscall,
 		descriptor: makeDescriptor(name, syscall),
 		events:     mapSubevents(subEvents),
@@ -102,29 +111,29 @@ func (this *Probe) Enable() (err error) {
 	}
 
 	if Available() == false {
-		return ErrUnavailable
+		return errUnavailable
 	}
 
 	// enable all events
 	for eventName, eventFileName := range this.events {
-		if err = WriteFile(eventFileName, "1"); err != nil {
+		if err = writeFile(eventFileName, "1"); err != nil {
 			return fmt.Errorf("Error while enabling event %s: %s", eventName, err)
 		}
 	}
 
 	// create the custom kprobe consumer
-	if err = WriteFile(SystemProbesFile, this.descriptor); err != nil {
+	if err = writeFile(systemProbesFile, this.descriptor); err != nil {
 		return fmt.Errorf("Error while enabling probe descriptor for %s: %s", this.name, err)
 	}
 
 	// enable the probe
-	if err = WriteFile(this.fileName, "1"); err != nil {
+	if err = writeFile(this.fileName, "1"); err != nil {
 		return fmt.Errorf("Error while enable probe %s: %s", this.name, err)
 	}
 
 	// create the handle to the pipe file
-	if this.pipe, err = Reader(EventsPipeFile); err != nil {
-		return fmt.Errorf("Error while opening %s: %s", EventsPipeFile, err)
+	if this.pipe, err = asyncFileReader(eventsPipeFile); err != nil {
+		return fmt.Errorf("Error while opening %s: %s", eventsPipeFile, err)
 	}
 
 	this.enabled = true
@@ -146,18 +155,18 @@ func (this *Probe) Disable() error {
 
 	// disable all events
 	for eventName, eventFileName := range this.events {
-		if err := WriteFile(eventFileName, "0"); err != nil {
+		if err := writeFile(eventFileName, "0"); err != nil {
 			return fmt.Errorf("Error while disabling event %s: %s", eventName, err)
 		}
 	}
 
 	// disable the probe itself
-	if err := WriteFile(this.fileName, "0"); err != nil {
+	if err := writeFile(this.fileName, "0"); err != nil {
 		return fmt.Errorf("Error while disabling probe %s: %s", this.name, err)
 	}
 
 	// remove the probe from the system
-	if err := AppendFile(SystemProbesFile, fmt.Sprintf("-:%s", this.name)); err != nil {
+	if err := appendFile(systemProbesFile, fmt.Sprintf("-:%s", this.name)); err != nil {
 		return fmt.Errorf("Error while removing the probe %s: %s", this.name, err)
 	}
 

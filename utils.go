@@ -7,15 +7,16 @@ import (
 	"strings"
 )
 
-const (
-	defaultTrimSet = "\r\n\t "
-)
-
-func Trim(s string) string {
-	return strings.Trim(s, defaultTrimSet)
+// Return true if FTRACE is available on this system, otherwise false.
+func Available() bool {
+	return trim(readFileOr(enabledStatusFile, "0")) == "1"
 }
 
-func ReadFileOr(filename string, deflt string) string {
+func trim(s string) string {
+	return strings.Trim(s, "\r\n\t ")
+}
+
+func readFileOr(filename string, deflt string) string {
 	if data, err := ioutil.ReadFile(filename); err != nil {
 		return deflt
 	} else {
@@ -23,11 +24,11 @@ func ReadFileOr(filename string, deflt string) string {
 	}
 }
 
-func WriteFile(filename string, data string) error {
+func writeFile(filename string, data string) error {
 	return ioutil.WriteFile(filename, []byte(data), 0755)
 }
 
-func AppendFile(filename string, data string) error {
+func appendFile(filename string, data string) error {
 	fp, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0755)
 	if err != nil {
 		return err
@@ -41,14 +42,10 @@ func AppendFile(filename string, data string) error {
 	return nil
 }
 
-func Available() bool {
-	return Trim(ReadFileOr(EnabledStatusFile, "0")) == "1"
-}
-
 func makeDescriptor(name, syscall string) string {
 	d := fmt.Sprintf("p:kprobes/%s %s", name, syscall)
 	// command line args will be in %si, we're asking ftrace for them
-	for argn := 0; argn < MaxArguments; argn++ {
+	for argn := 0; argn < maxArguments; argn++ {
 		d += fmt.Sprintf(" arg%d=+0(+%d(%%si)):string", argn, argn*8)
 	}
 	return d
@@ -64,7 +61,7 @@ func mapSubevents(subEvents []string) map[string]string {
 				parts := strings.SplitN(eventName, "/", 2)
 				eventName = parts[1]
 			}
-			m[eventName] = fmt.Sprintf(EventProbeFileFmt, eventPath)
+			m[eventName] = fmt.Sprintf(eventFileFormat, eventPath)
 		}
 	}
 	return m
