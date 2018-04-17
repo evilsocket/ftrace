@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Return true if FTRACE is available on this system, otherwise false.
+// Available returns true if FTRACE is available on this system, otherwise false.
 func Available() bool {
 	return trim(readFileOr(enabledStatusFile, "0")) == "1"
 }
