@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// gotags-7634  [003] .... 12909.950814:
 var eventParser = regexp.MustCompile(`^.+\[\d+].+:\s+([^:]+):\s+(.+)$`)
 
+// Event represents a single FTRACE notification.
 type Event struct {
 	// name of this event
 	Name string
@@ -18,6 +18,7 @@ type Event struct {
 	Args map[string]string
 }
 
+// Argv returns a list of the argument values of this event.
 func (e Event) Argv() []string {
 	argv := make([]string, len(e.Args))
 	argc := 0
@@ -28,6 +29,7 @@ func (e Event) Argv() []string {
 	return argv
 }
 
+// String returns a string representation of this event.
 func (e Event) String() string {
 	s := e.Name
 	if e.IsSyscall {

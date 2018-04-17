@@ -18,6 +18,7 @@ const (
 
 var errUnavailable = errors.New("FTRACE kernel framework not available on your system")
 
+// Probe represents a FTRACE probe to a system call and optional sub events.
 type Probe struct {
 	sync.RWMutex
 	// custom name of the probe
@@ -40,6 +41,7 @@ type Probe struct {
 	bus chan Event
 }
 
+// NewProbe creates a new probe with a custom name for the given syscall and optional sub events.
 func NewProbe(name string, syscall string, subEvents []string) *Probe {
 	return &Probe{
 		name:       name,
@@ -54,12 +56,14 @@ func NewProbe(name string, syscall string, subEvents []string) *Probe {
 	}
 }
 
+// Enabled return true if this probe is enabled and running, otherwise false.
 func (this *Probe) Enabled() bool {
 	this.RLock()
 	defer this.RUnlock()
 	return this.enabled
 }
 
+// Events returns a channel where FTRACE events will be written by this Probe worker routine.
 func (this *Probe) Events() <-chan Event {
 	return this.bus
 }
@@ -102,6 +106,7 @@ func (this *Probe) worker() {
 	}
 }
 
+// Enable enables this probe and starts its async worker routine in order to read FTRACE events.
 func (this *Probe) Enable() (err error) {
 	this.Lock()
 	defer this.Unlock()
@@ -145,6 +150,7 @@ func (this *Probe) Enable() (err error) {
 	return nil
 }
 
+// Disable disables this probe and stops its async worker.
 func (this *Probe) Disable() error {
 	this.Lock()
 	defer this.Unlock()
