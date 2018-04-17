@@ -70,7 +70,7 @@ func (this *Probe) selectEvent(event string) bool {
 		return true
 	}
 	// one of the sub events
-	for eventName, _ := range this.events {
+	for eventName := range this.events {
 		if strings.Contains(event, eventName) {
 			return true
 		}
