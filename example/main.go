@@ -32,6 +32,9 @@ func main() {
 
 	probe := ftrace.NewProbe("test_probe", "sys_execve", subEvents)
 
+	// start from a clean status
+	probe.Reset()
+
 	if err := probe.Enable(); err != nil {
 		fmt.Printf("%s\n", err)
 		return

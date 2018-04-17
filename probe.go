@@ -150,15 +150,8 @@ func (p *Probe) Enable() (err error) {
 	return nil
 }
 
-// Disable disables this probe and stops its async worker.
-func (p *Probe) Disable() error {
-	p.Lock()
-	defer p.Unlock()
-
-	if p.enabled == false {
-		return nil
-	}
-
+// Reset disables this probe.
+func (p *Probe) Reset() error {
 	// disable all events
 	for eventName, eventFileName := range p.events {
 		if err := writeFile(eventFileName, "0"); err != nil {
@@ -174,6 +167,22 @@ func (p *Probe) Disable() error {
 	// remove the probe from the system
 	if err := appendFile(systemProbesFile, fmt.Sprintf("-:%s", p.name)); err != nil {
 		return fmt.Errorf("Error while removing the probe %s: %s", p.name, err)
+	}
+
+	return nil
+}
+
+// Disable disables this probe and stops its async worker.
+func (p *Probe) Disable() error {
+	p.Lock()
+	defer p.Unlock()
+
+	if p.enabled == false {
+		return nil
+	}
+
+	if err := p.Reset(); err != nil {
+		return err
 	}
 
 	p.enabled = false
