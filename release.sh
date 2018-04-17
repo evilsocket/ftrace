@@ -1,7 +1,7 @@
 #!/bin/bash
 # nothing to see here, just a utility i use to create new releases ^_^
 
-CURRENT_VERSION=$(cat version.go | grep Version | cut -d '"' -f 2)
+CURRENT_VERSION=$(cat version.go | grep "Version =" | cut -d '"' -f 2)
 TO_UPDATE=(
     version.go
 )
