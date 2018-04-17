@@ -97,7 +97,7 @@ func (this *Probe) worker() {
 		// check if we're interested in this event
 		if this.selectEvent(eventLine) {
 			// parse the raw event data
-			if err, event := parseEvent(eventLine); err != nil {
+			if event, err := parseEvent(eventLine); err != nil {
 				fmt.Printf("Error while parsing event: %s\n", err)
 			} else {
 				this.bus <- event

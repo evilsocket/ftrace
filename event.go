@@ -49,7 +49,7 @@ func parseUntilNext(data string, tok rune) (string, int) {
 	return data[0:tokOffset], tokOffset
 }
 
-func parseEvent(data string) (error, Event) {
+func parseEvent(data string) (Event, error) {
 	m := eventParser.FindStringSubmatch(trim(data))
 	if m != nil && len(m) == 3 {
 		event := Event{
@@ -98,9 +98,8 @@ func parseEvent(data string) (error, Event) {
 			event.Args[argName] = argValue
 		}
 
-		return nil, event
-
+		return event, nil
 	}
 
-	return fmt.Errorf("Could not parse event data '%s'", data), Event{}
+	return Event{}, fmt.Errorf("Could not parse event data '%s'", data)
 }
