@@ -51,7 +51,7 @@ func main() {
 		if e.IsSyscall {
 			fmt.Printf("SYSCALL %s\n", e)
 		} else {
-			fmt.Printf("        %s\n", e)
+			fmt.Printf("\t%s\n", e)
 		}
 	}
 }
