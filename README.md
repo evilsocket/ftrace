@@ -16,7 +16,7 @@ $ go get -u github.com/evilsocket/ftrace
 Documentation
 -------------
 
-See [API documentation](https://godoc.org/github.com/evilsocket/ftrace) for package and API descriptions and find examples in the [examples directory](examples/).
+See [API documentation](https://godoc.org/github.com/evilsocket/ftrace) for package and API descriptions and find examples in the [this directory](example/).
 
 License
 -------
