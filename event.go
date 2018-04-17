@@ -3,13 +3,16 @@ package ftrace
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
-var eventParser = regexp.MustCompile(`^.+\[\d+].+:\s+([^:]+):\s+(.+)$`)
+var eventParser = regexp.MustCompile(`^.+\-(\d+)\s+\[\d+\].+:\s+([^:]+):\s+(.+)$`)
 
 // Event represents a single FTRACE notification.
 type Event struct {
+	// process id for this event
+	PID int
 	// name of this event
 	Name string
 	// true if this is a syscall event or false of any sub event
@@ -40,7 +43,7 @@ func (e Event) Argv() []string {
 
 // String returns a string representation of this event.
 func (e Event) String() string {
-	s := e.Name
+	s := fmt.Sprintf("pid:%d %s", e.PID, e.Name)
 	if e.IsSyscall {
 		s += fmt.Sprintf("(%s)", strings.Join(e.Argv(), ", "))
 	} else {
@@ -60,19 +63,26 @@ func parseUntilNext(data string, tok rune) (string, int) {
 
 func parseEvent(data string) (Event, error) {
 	m := eventParser.FindStringSubmatch(trim(data))
-	if m != nil && len(m) == 3 {
+	if m != nil && len(m) == 4 {
+		pid, _ := strconv.Atoi(m[1])
 		event := Event{
-			Name:      m[1],
-			IsSyscall: len(m[2]) > 0 && m[2][0] == '(',
+			PID:       pid,
+			Name:      m[2],
+			IsSyscall: len(m[3]) > 0 && m[3][0] == '(',
 			Args:      make(map[string]string),
 		}
 
-		args := m[2]
+		args := m[3]
 		if event.IsSyscall {
 			// remove the syscall name from the arguments
 			nameEndOffset := strings.Index(args, ") ")
 			event.Name = args[1:nameEndOffset]
 			args = args[nameEndOffset+2:]
+			// remove extra crap aftr the + ( "SyS_execve+0x0/0x40" )
+			if strings.ContainsRune(event.Name, '+') {
+				parts := strings.SplitN(event.Name, "+", 2)
+				event.Name = trim(parts[0])
+			}
 		}
 
 		for len(args) > 0 {
