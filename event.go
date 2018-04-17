@@ -20,11 +20,20 @@ type Event struct {
 
 // Argv returns a list of the argument values of this event.
 func (e Event) Argv() []string {
-	argv := make([]string, len(e.Args))
-	argc := 0
-	for _, v := range e.Args {
-		argv[argc] = v
-		argc++
+	nargs := len(e.Args)
+	argv := make([]string, nargs)
+
+	// maps are not sorted
+	if e.IsSyscall {
+		for i := 0; i < nargs; i++ {
+			argv[i] = e.Args[fmt.Sprintf("arg%d", i)]
+		}
+	} else {
+		argc := 0
+		for _, v := range e.Args {
+			argv[argc] = v
+			argc++
+		}
 	}
 	return argv
 }
