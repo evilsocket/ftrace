@@ -28,7 +28,7 @@ type Probe struct {
 	// channel used to signal from the worker
 	done chan bool
 	// channel where events are sent
-	bus chan string
+	bus chan Event
 }
 
 func NewProbe(name string, syscall string, subEvents []string) *Probe {
@@ -41,7 +41,7 @@ func NewProbe(name string, syscall string, subEvents []string) *Probe {
 		enabled:    false,
 		pipe:       nil,
 		done:       make(chan bool),
-		bus:        make(chan string),
+		bus:        make(chan Event),
 	}
 }
 
@@ -51,7 +51,7 @@ func (this *Probe) Enabled() bool {
 	return this.enabled
 }
 
-func (this *Probe) Events() <-chan string {
+func (this *Probe) Events() <-chan Event {
 	return this.bus
 }
 
@@ -76,25 +76,19 @@ func (this *Probe) worker() {
 	}()
 
 	for eventLine := range this.pipe {
+		// our parent go routine is telling us to quit
 		if eventLine == "<quit>" {
 			break
 		}
 
-		/*
-			             vim-5232  [001] d... 11412.940204: test_probe: (SyS_execve+0x0/0x40) arg0="/usr/bin/zsh" arg1="-c" arg2="(git -c color.status=false status -s /home/evilsocket/gocode/src/github.com/evilsocket/ftrace) >/tmp/v5b7jjU/390 2>&1" arg3=(fault) arg4=(fault) arg5=(fault) arg6=(fault) arg7=(fault) arg8=(fault) arg9=(fault) arg10=(fault) arg11=(fault) arg12="" arg13=(fault) arg14="isFoldable" arg15=(fault)
-
-
-					 WorkerPool/4961-4961  [002] .... 11375.704112: sched_process_exit: comm=WorkerPool/4961 pid=4961 prio=120
-					           slack-9761  [001] .... 11375.705486: sched_process_fork: comm=slack pid=9761 child_comm=slack child_pid=5123
-					          chrome-10404 [000] .... 11377.791761: sched_process_fork: comm=chrome pid=10404 child_comm=chrome child_pid=5124
-					 TaskSchedulerFo-5005  [003] .... 11380.022092: sched_process_exit: comm=TaskSchedulerFo pid=5005 prio=120
-					           <...>-4400  [001] .... 11380.022282: sched_process_exit: comm=TaskSchedulerFo pid=4400 prio=120
-					 TaskSchedulerFo-5015  [003] .... 11381.777781: sched_process_exit: comm=TaskSchedulerFo pid=5015 prio=120
-		*/
-
 		// check if we're interested in this event
 		if this.selectEvent(eventLine) {
-			this.bus <- eventLine
+			// parse the raw event data
+			if err, event := parseEvent(eventLine); err != nil {
+				fmt.Printf("Error while parsing event: %s\n", err)
+			} else {
+				this.bus <- event
+			}
 		}
 	}
 }

@@ -47,7 +47,11 @@ func main() {
 
 	fmt.Printf("Probe is running ...\n")
 
-	for event := range probe.Events() {
-		fmt.Printf("%s\n", event)
+	for e := range probe.Events() {
+		if e.IsSyscall {
+			fmt.Printf("SYSCALL %s\n", e)
+		} else {
+			fmt.Printf("        %s\n", e)
+		}
 	}
 }
