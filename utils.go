@@ -17,11 +17,11 @@ func trim(s string) string {
 }
 
 func readFileOr(filename string, deflt string) string {
-	if data, err := ioutil.ReadFile(filename); err != nil {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
 		return deflt
-	} else {
-		return string(data)
 	}
+	return string(data)
 }
 
 func writeFile(filename string, data string) error {
